@@ -13,9 +13,9 @@ log() {
 # error fn
 fatal() {
 	local color_fatal=$'\033[0;31m'
-	log "${color_fatal}$@ Failed!"
-	log "${color_fatal}Error!"
-	log "${color_fatal}Exiting."
+	log "${color_fatal} $@ Failed!"
+	log "${color_fatal}	Error!"
+	log "${color_fatal}	Exiting."
 	exit 1
 }
 
@@ -33,13 +33,13 @@ get_mirrors() {
 partition_disk() {
 # prep disks
 log "Formatting disk"
-fdisk $disk0 << FDISK_CMDS_PREP || fatal "Format disks."
+fdisk "$disk0" << FDISK_CMDS_PREP || fatal "Format disks."
 g
 w
 FDISK_CMDS_PREP
 
 # start formatting disk
-fdisk $disk0 << FDISK_CMDS || fatal "Create partitions"
+fdisk "$disk0" << FDISK_CMDS || fatal "Create partitions"
 n
 1
 
@@ -51,11 +51,11 @@ n
 n
 3
 
-+$(echo $rootsize)
++$(echo "$rootsize")
 n
 4
 
-+$(echo $homesize)
++$(echo "$homesize")
 t
 1
 4
@@ -74,23 +74,23 @@ FDISK_CMDS
 
 set_crypt() {
 log "Setting up cryptography"
-rootkfile="/root/$(echo $keypref)keyfile_root"
-homekfile="/root/$(echo $keypref)keyfile_home"
+rootkfile="/root/$(echo "$keypref")keyfile_root"
+homekfile="/root/$(echo "$keypref")keyfile_home"
 
 dd if=/dev/urandom of="$rootkfile" bs=1024 count=10 &&
 dd if=/dev/urandom of="$homekfile" bs=1024 count=10 &&
 
-echo -e $passroot | cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --type luks2 --iter-time=1000 $(echo $disk0)3 &&
-echo -e $passroot | cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --type luks2 --iter-time=1000 $(echo $disk0)4 &&
-echo -e $passroot | cryptsetup luksAddKey $(echo $disk0)3 "$rootkfile" &&
-echo -e $passroot | cryptsetup luksAddKey $(echo $disk0)4 "$homekfile" || fatal "Cryptsetup."
+echo -e "$passroot" | cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --type luks2 --iter-time=1000 $(echo "$disk0")3 &&
+echo -e "$passroot" | cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --type luks2 --iter-time=1000 $(echo "$disk0")4 &&
+echo -e "$passroot" | cryptsetup luksAddKey $(echo "$disk0")3 "$rootkfile" &&
+echo -e "$passroot" | cryptsetup luksAddKey $(echo "$disk0")4 "$homekfile" || fatal "Cryptsetup."
 }
 
 copy_key() {
 log "Copying key"
 mkdir /mnt0 &&
-mount $usb /mnt0 || fatal "Mount USB."
-if [ $(df -TH $usb | grep /dev | awk '{print $2}') != "ext4" ]
+mount "$usb" /mnt0 || fatal "Mount USB."
+if [ $(df -TH "$usb" | grep /dev | awk '{print $2}') != "ext4" ]
 then
 	log "The usb is not an ext4 formatted disk, or the disk isn't valid, the key file will not be copied!!" &&
 	keyfilegrub=""&&
@@ -101,21 +101,21 @@ else
 	usbuuid=$(blkid | grep "usb" | awk '{print $2}' | sed 's/"//g') &&
 	umount /mnt0 &&
 	rmdir /mnt0 &&
-	keyfilegrub="$usbuuid:ext4:$(echo $keypref)keyfile_root"
+	keyfilegrub="$usbuuid:ext4:$(echo "$keypref")keyfile_root"
 fi
 }
 
 unlock_crypt() {
 log "Decrypting partitions"
-cryptsetup open --key-file="$rootkfile" $(echo $disk0)3 cryptroot &&
-cryptsetup open --key-file="$homekfile" $(echo $disk0)4 crypthome || fatal "Unlocking partitions."
+cryptsetup open --key-file="$rootkfile" $(echo "$disk0")3 cryptroot &&
+cryptsetup open --key-file="$homekfile" $(echo "$disk0")4 crypthome || fatal "Unlocking partitions."
 }
 
 format_partitions() {
 log "Formatting partitions"
 mkfs.ext4 /dev/mapper/cryptroot &&
 mkfs.ext4 /dev/mapper/crypthome &&
-mkfs.ext4 $(echo $disk0)2 || fatal "Formatting partitions."
+mkfs.ext4 $(echo "$disk0")2 || fatal "Formatting partitions."
 }
 
 mount_partitions() {
@@ -123,7 +123,7 @@ log "Mounting partitions"
 mount /dev/mapper/cryptroot /mnt &&
 mkdir /mnt/boot &&
 mkdir /mnt/home &&
-mount $(echo $disk0)2 /mnt/boot &&
+mount $(echo "$disk0")2 /mnt/boot &&
 mount /dev/mapper/crypthome /mnt/home || fatal "Mounting partitions."
 }
 
@@ -136,7 +136,7 @@ chrooting() {
 log "Chrooting"
 cp -R ../linux-autoinstall /mnt/ &&
 cp "$homekfile" /mnt/ || fatal "Copy arch-conf and home key."
-arch-chroot /mnt /linux-autoinstall/deploy-internal || fatal "Arch-chroot."
+arch-chroot /mnt /linux-autoinstall/deploy-internal $disk0 $keyfilegrub $keypref || fatal "Arch-chroot."
 }
 
 consent() {
@@ -163,7 +163,7 @@ done
 }
 
 get_data() {
-read -r -p "$1" $2 || fatal "Invalid input."
+read -r -p "$1" "$2" || fatal "Invalid input."
 }
 
 get_passwd() {
