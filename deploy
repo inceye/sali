@@ -12,23 +12,27 @@ log() {
 
 # error fn
 fatal() {
-	log "$@ Failed!"
-	log "Error!"
-	log "Exiting."
+	local color_fatal=$'\033[0;31m'
+	log "${color_fatal}$@ Failed!"
+	log "${color_fatal}Error!"
+	log "${color_fatal}Exiting."
 	exit 1
 }
 
 check_inet() {
+	log "Checking internet connection"
 	ping -q -c 1 1.1.1.1 > /dev/null || ping -q -c 1 1.0.0.1 > /dev/null || ping -q -c 1 inceye.com || fatal "No internet connection detected."
 }
 
 get_mirrors() {
+	log "Getting mirrorlist and updating pacman"
 	reflector --age 24 --protocol https --sort rate --save /etc/pacman.d/mirrorlist && 
 	pacman -Sy || fatal "Install mirrorlist."
 }
 
 partition_disk() {
 # prep disks
+log "Formatting disk"
 fdisk $disk0 << FDISK_CMDS_PREP || fatal "Format disks."
 g
 w
@@ -69,6 +73,7 @@ FDISK_CMDS
 }
 
 set_crypt() {
+log "Setting up cryptography"
 rootkfile="/root/$(echo $keypref)keyfile_root"
 homekfile="/root/$(echo $keypref)keyfile_home"
 
@@ -82,6 +87,7 @@ echo -e $passroot | cryptsetup luksAddKey $(echo $disk0)4 "$homekfile" || fatal 
 }
 
 copy_key() {
+log "Copying key"
 mkdir /mnt0 &&
 mount $usb /mnt0 || fatal "Mount USB."
 if [ $(df -TH $usb | grep /dev | awk '{print $2}') != "ext4" ]
@@ -100,17 +106,20 @@ fi
 }
 
 unlock_crypt() {
+log "Decrypting partitions"
 cryptsetup open --key-file="$rootkfile" $(echo $disk0)3 cryptroot &&
 cryptsetup open --key-file="$homekfile" $(echo $disk0)4 crypthome || fatal "Unlocking partitions."
 }
 
 format_partitions() {
+log "Formatting partitions"
 mkfs.ext4 /dev/mapper/cryptroot &&
 mkfs.ext4 /dev/mapper/crypthome &&
 mkfs.ext4 $(echo $disk0)2 || fatal "Formatting partitions."
 }
 
 mount_partitions() {
+log "Mounting partitions"
 mount /dev/mapper/cryptroot /mnt &&
 mkdir /mnt/boot &&
 mkdir /mnt/home &&
@@ -119,13 +128,15 @@ mount /dev/mapper/crypthome /mnt/home || fatal "Mounting partitions."
 }
 
 pacstrapping() {
+log "Pacstrapping"
 pacstrap /mnt base linux linux-firmware linux-hardened || fatal "Packstrapping."
 }
 
 chrooting() {
-cp -R ../arch-conf /mnt/ &&
+log "Chrooting"
+cp -R ../linux-autoinstall /mnt/ &&
 cp "$homekfile" /mnt/ || fatal "Copy arch-conf and home key."
-arch-chroot /mnt /arch-conf/deploy-internal || fatal "Arch-chroot."
+arch-chroot /mnt /linux-autoinstall/deploy-internal || fatal "Arch-chroot."
 }
 
 consent() {
@@ -136,6 +147,7 @@ do
 	case $yn in
 	    Yes )
 			echo "Yes"
+			log "Proceding"
 			break
 			;;
 	    No )
@@ -174,7 +186,8 @@ done
 
 stage1_install() {
 
-log "Starting stage1 install."
+log "Starting stage1 install..."
+
 check_inet
 get_mirrors
 
@@ -212,4 +225,7 @@ mount_partitions
 pacstrapping
 
 chrooting
+
 }
+
+stage1_install
