@@ -307,6 +307,8 @@ log "Installing stage2"
 
 cd /linux-autoinstall || fatal "Cant cd into linux-autoinstall"
 
+get_vars
+
 initial
 
 locale
