@@ -111,7 +111,7 @@ fi
 unlock_crypt() {
 log "Decrypting partitions"
 echo -e "$passroot" | cryptsetup open $(echo "$disk0")3 cryptroot &&
-passroot = "" &&
+passroot="" &&
 cryptsetup open --key-file="$homekfile" $(echo "$disk0")4 crypthome || fatal "Unlocking partitions."
 }
 
