@@ -72,7 +72,7 @@ pacman -S grub reflector autoconf-archive \
 	system-config-printer \
 	lynx elinks firefox \
 	pass pass-otp zbar \
-	mumble toxic &&
+	mumble toxic || fatal "Packman"
 }
 
 sudo_setup() {
@@ -117,7 +117,7 @@ log "Installing pacaur"
 su "$username" -c "git clone https://aur.archlinux.org/pacaur.git" &&
 cd pacaur &&
 su "$username" -c -P "makepkg -si" || fatal "Pacaur"
-cd .. &&
+cd .. 
 }
 
 selinux_install() {
@@ -182,7 +182,7 @@ cp system/bash/xinitrc /home/"$username"/.xinitrc &&
 cp system/bash/bashrc /home/"$username"/.bashrc || fatal "User configs setup"
 
 cp scripts/bin/* /home/"$username"/.local/bin/ &&
-cp scripts/share/* /home/"$username"/.local/share/ &&
+cp scripts/share/* /home/"$username"/.local/share/ || fatal "User configs .local"
 }
 
 suckless() {
