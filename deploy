@@ -177,12 +177,17 @@ done
 ask_get_mirrors() {
 while true
 do
-	read -r -p "Do you want to set up optimal mirrors? This might take a long time. [Yes/No] " yn
+	read -r -p "Do you want to set up optimal mirrors? Or set them up manually? This might take a long time. [Yes/Set/No] " yn
 
 	case $yn in
 	    Yes )
 			log "Getting mirrors"
 			get_mirrors >/dev/null 2>&1
+			break
+			;;
+			Set )
+			log "Setting up mirorrs"
+			vim /etc/pacman.d/mirrorlist
 			break
 			;;
 	    No )
@@ -191,7 +196,7 @@ do
 			break
 	    ;;
 	    *)
-		echo 'Invalid input... Type "Yes" or "No"'
+		echo 'Invalid input... Type "Yes", "Set" or "No"'
 		;;
 	esac
 done
