@@ -95,8 +95,8 @@ chmod +w /etc/sudoers &&
 echo "%wheel ALL=(ALL) NOPASSWD: ALL #" >> /etc/sudoers &&
 echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/hibernate, /usr/bin/reboot, /usr/bin/shutdown*" >> /etc/sudoers &&
 echo "Defaults editor=/bin/nvim" >> /etc/sudoers &&
-echo "Defaults insults" >> /etc/sudoers &&
-mkdir /etc/sudoers.d &&
+echo "Defaults insults" >> /etc/sudoers || fatal "Sudo"
+mkdir /etc/sudoers.d || log "/etc/sudoers.d exists"
 cp system/sudo/privacy /etc/sudoers.d/ &&
 echo "Defaults lecture=always" > /etc/sudoers.d/privacy || fatal "Sudo"
 }
