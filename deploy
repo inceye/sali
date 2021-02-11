@@ -173,6 +173,30 @@ done
 
 }
 
+ask_get_mirrors() {
+while true
+do
+	read -r -p "Do you want to set up optimal mirrors? This might take a long time. [Yes/No] " yn
+
+	case $yn in
+	    Yes )
+			log "Getting mirrors"
+			get_mirrors >/dev/null 2>&1
+			break
+			;;
+	    No )
+			log "Not setting up mirrors."
+			log "The default ones are going to be used."
+			break
+	    ;;
+	    *)
+		echo 'Invalid input... Type "Yes" or "No"'
+		;;
+	esac
+done
+
+}
+
 consent() {
 while true
 do
@@ -223,7 +247,7 @@ stage1_install() {
 log "Starting stage1 install..."
 
 check_inet
-get_mirrors
+ask_get_mirrors
 
 # get disk
 get_data "Enter the disk that archlinux will be installed on (e.g. /dev/sdx) " disk0
