@@ -111,6 +111,7 @@ fi
 unlock_crypt() {
 log "Decrypting partitions"
 echo -e "$passroot" | cryptsetup open $(echo "$disk0")3 cryptroot &&
+passroot = "" &&
 cryptsetup open --key-file="$homekfile" $(echo "$disk0")4 crypthome || fatal "Unlocking partitions."
 }
 
@@ -227,16 +228,17 @@ read -r -p "$1" "$2" || fatal "Invalid input."
 get_passwd() {
 while true
 do
-	read -r -s -p "Enter a backup password for cryptography:" passroot &&
+	read -r -s -p "Enter a password for cryptography:" passroot &&
 	echo ""
-	read -r -s -p "Repeat the backup password for cryptography:" passrootrpt &&
+	read -r -s -p "Repeat the password for cryptography:" passrootrpt &&
 	echo ""
 	if [ "$passroot" == "$passrootrpt" ]
 	then
-		echo "Passwords match, proceeding"
+		log "Passwords match, proceeding"
+		passrootrpt = "" || fatal "Error with password setup"
 		break
 	else
-		echo "Passwords don't match, try again"
+		log "${color_fatal} Passwords don't match, try again"
 		continue
 	fi
 done
