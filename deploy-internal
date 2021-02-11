@@ -1,6 +1,8 @@
 #!/bin/bash
 
-
+disk0=$1
+keyfilegrub=$2
+keypref=$3
 
 # logging fn
 log() {
@@ -16,12 +18,6 @@ fatal() {
 	log "${color_fatal}	Error!"
 	log "${color_fatal}	Exiting."
 	exit 1
-}
-
-get_vars() {
-  disk0=$1
-  keyfilegrub=$2
-  keypref=$3
 }
 
 initial() {
