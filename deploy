@@ -274,8 +274,8 @@ get_data "We will create keyfiles for your new system, if you want to prefix you
 set_crypt
 
 # copy key file support
-ask_key_copy
 keyfilegrub=""
+ask_key_copy
 
 unlock_crypt
 
