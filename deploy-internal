@@ -1,5 +1,23 @@
 #!/bin/bash
 
+
+
+# logging fn
+log() {
+	local color_on=$'\e[0;32m'
+	local color_off=$'\e[0m'
+	echo "${color_on}[$(date)]${color_off} $@" >&2
+}
+
+# error fn
+fatal() {
+	local color_fatal=$'\033[0;31m'
+	log "${color_fatal} $@ Failed!"
+	log "${color_fatal}	Error!"
+	log "${color_fatal}	Exiting."
+	exit 1
+}
+
 get_vars() {
   disk0=$1
   keyfilegrub=$2
@@ -340,8 +358,8 @@ swap_setup
 kernel_setup
 
 chown -R $username:$username /home/$username || fatal "Chown"
-
-su "$username" -c -P "suckless" || fatal "User setup with suckless function"
+export -f suckless &&
+su "$username" -c -P "bash -c suckless" || fatal "User setup with suckless function"
 
 reboot_logic
 }
