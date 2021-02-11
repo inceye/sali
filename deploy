@@ -153,6 +153,11 @@ do
 			log "Started the copying process"
 			copy_key_support
 			copy_key
+			# get usb
+			log "Sleeping for 10 seconds, insert the USB you wish to copy your keyfile to..."
+			sleep 10
+			lsblk
+			get_data "Enter the usb partition for the keyfile:" usb
 			break
 			;;
 	    n|N )
@@ -236,12 +241,6 @@ get_passwd
 get_data "We will create keyfiles for your new system, if you want to prefix your new keyfiles with some string, so that the script does not overwrite your old keys, enter this string:" keypref
 
 set_crypt
-
-# get usb
-log "Sleeping for 10 seconds, insert the USB you wish to copy your keyfile to..."
-sleep 10
-lsblk
-get_data "Enter the usb partition for the keyfile:" usb
 
 # copy key file support
 ask_key_copy
