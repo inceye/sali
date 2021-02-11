@@ -240,7 +240,7 @@ do
 	if [ "$passroot" == "$passrootrpt" ]
 	then
 		log "Passwords match, proceeding"
-		passrootrpt = "" || fatal "Error with password setup"
+		passrootrpt="" || fatal "Error with password setup"
 		break
 	else
 		log "${color_fatal} Passwords don't match, try again"
