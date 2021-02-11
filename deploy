@@ -110,7 +110,7 @@ fi
 
 unlock_crypt() {
 log "Decrypting partitions"
-cryptsetup open --key-file="$rootkfile" $(echo "$disk0")3 cryptroot &&
+echo -e "$passroot" | cryptsetup open $(echo "$disk0")3 cryptroot &&
 cryptsetup open --key-file="$homekfile" $(echo "$disk0")4 crypthome || fatal "Unlocking partitions."
 }
 
@@ -148,7 +148,7 @@ do
 	read -r -p "Do you want to copy keyfiles to usb for automatic crypto? [Yes/No] " yn
 
 	case $yn in
-	    y|Y )
+	    Yes )
 			log "Yes"
 			log "Started the copying process"
 			copy_key_support
@@ -160,7 +160,7 @@ do
 			get_data "Enter the usb partition for the keyfile:" usb
 			break
 			;;
-	    n|N )
+	    No )
 			log "No"
 			log "Terminated the copying process"
 			break
