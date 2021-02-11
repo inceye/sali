@@ -74,16 +74,19 @@ FDISK_CMDS
 
 set_crypt() {
 log "Setting up cryptography"
-rootkfile="/root/$(echo "$keypref")keyfile_root"
 homekfile="/root/$(echo "$keypref")keyfile_home"
-
-dd if=/dev/urandom of="$rootkfile" bs=1024 count=10 &&
 dd if=/dev/urandom of="$homekfile" bs=1024 count=10 &&
 
 echo -e "$passroot" | cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --type luks2 --iter-time=1000 $(echo "$disk0")3 &&
 echo -e "$passroot" | cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --type luks2 --iter-time=1000 $(echo "$disk0")4 &&
-echo -e "$passroot" | cryptsetup luksAddKey $(echo "$disk0")3 "$rootkfile" &&
 echo -e "$passroot" | cryptsetup luksAddKey $(echo "$disk0")4 "$homekfile" || fatal "Cryptsetup."
+}
+
+copy_key_support() {
+log "Adding key copy support"
+rootkfile="/root/$(echo "$keypref")keyfile_root"
+dd if=/dev/urandom of="$rootkfile" bs=1024 count=10 &&
+echo -e "$passroot" | cryptsetup luksAddKey $(echo "$disk0")3 "$rootkfile" || fatal "Key copy support"
 }
 
 copy_key() {
@@ -137,6 +140,32 @@ log "Chrooting"
 cp -R ../linux-autoinstall /mnt/ &&
 cp "$homekfile" /mnt/ || fatal "Copy arch-conf and home key."
 arch-chroot /mnt /linux-autoinstall/deploy-internal $disk0 $keyfilegrub $keypref || fatal "Arch-chroot."
+}
+
+ask_key_copy() {
+while true
+do
+	read -r -p "Do you want to copy keyfiles to usb for automatic crypto? [Yes/No] " yn
+
+	case $yn in
+	    y|Y )
+			log "Yes"
+			log "Started the copying process"
+			copy_key_support
+			copy_key
+			break
+			;;
+	    n|N )
+			log "No"
+			log "Terminated the copying process"
+			break
+	    ;;
+	    *)
+		echo 'Invalid input... Type "Yes" or "No"'
+		;;
+	esac
+done
+
 }
 
 consent() {
@@ -214,7 +243,9 @@ sleep 10
 lsblk
 get_data "Enter the usb partition for the keyfile:" usb
 
-copy_key
+# copy key file support
+ask_key_copy
+keyfilegrub=""
 
 unlock_crypt
 
