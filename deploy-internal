@@ -48,14 +48,14 @@ while true
 do
 	passwd "$username" &&
 	break
-	echo "Try again"
+	log "Try again"
 done
 
 }
 
 pacman_setup() {
 log "Setting up pacman"
-cp system/pacman/pacman.conf /etc/ &&
+cp /linux-autoinstall/system/pacman/pacman.conf /etc/ &&
 pacman -Sy || fatal "Pacman"
 }
 
@@ -97,7 +97,7 @@ echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/hibernate, /usr/bin/reboot, /usr
 echo "Defaults editor=/bin/nvim" >> /etc/sudoers &&
 echo "Defaults insults" >> /etc/sudoers || fatal "Sudo"
 mkdir /etc/sudoers.d || log "/etc/sudoers.d exists"
-cp system/sudo/privacy /etc/sudoers.d/ &&
+cp /linux-autoinstall/system/sudo/privacy /etc/sudoers.d/ &&
 echo "Defaults lecture=always" > /etc/sudoers.d/privacy || fatal "Sudo"
 }
 
@@ -107,31 +107,28 @@ cargo install starship --root / || fatal "Starship"
 
 #pacaur install
 log "Installing some aut packages"
-mkdir tmp &&
-chown "$username":"$username" tmp
-cd tmp &&
+mkdir /linux-autoinstall/tmp &&
+chown "$username":"$username" /linux-autoinstall/tmp
+cd /linux-autoinstall/tmp &&
 su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key CFDF148828C642A7" || fatal "GPG key for libxft-bgra"
 
 #libxft-bgra
 log "Install libxft-bgra"
 su "$username" -c "git clone https://aur.archlinux.org/libxft-bgra.git" &&
-cd libxft-bgra &&
+cd /linux-autoinstall/tmp/libxft-bgra &&
 su "$username" -c -P "makepkg -si" || fatal "Libxft-bgra"
-cd .. &&
 
 #auracle-git
 log "Installing auracle-git"
 su "$username" -c "git clone https://aur.archlinux.org/auracle-git.git" &&
-cd auracle-git &&
+cd /linux-autoinstall/tmp/auracle-git &&
 su "$username" -c -P "makepkg -si" || fatal "Auracle-git"
-cd .. &&
 
 #pacaur
 log "Installing pacaur"
 su "$username" -c "git clone https://aur.archlinux.org/pacaur.git" &&
-cd pacaur &&
+cd /linux-autoinstall/tmp/pacaur &&
 su "$username" -c -P "makepkg -si" || fatal "Pacaur"
-cd .. 
 }
 
 selinux_install() {
@@ -173,30 +170,30 @@ su "$username" -c -P "pacaur -S selinux-refpolicy-arch" || fatal "Selinux"
 }
 
 dir_setup() {
-  (mkdir /home/"$username"/.config || log ".config exists")
-  mkdir -p /home/"$username"/Pictures/Screenshots
-  cp rice/wallpaper.jpg /home/"$username"/ || fatal "Dir"
+  (mkdir -p /home/"$username"/.config || log ".config exists")
+  mkdir -p /home/"$username"/Pictures/Screenshots || log "Screenshots exists"
+  cp /linux-autoinstall/rice/wallpaper.jpg /home/"$username"/ || fatal "Dir"
 }
 
 configs() {
 log "Setting up configs and dotfiles"
-cp system/xorg/* /etc/X11/xorg.conf.d/ &&
+cp /linux-autoinstall/system/xorg/* /etc/X11/xorg.conf.d/ &&
 
 #add MBROLA
-cp rice/MBROLA/Bin/mbrola /usr/bin/mbrola &&
+cp /linux-autoinstall/rice/MBROLA/Bin/mbrola /usr/bin/mbrola &&
 mkdir /usr/share/mbrola/ &&
-cp rice/MBROLA/us* /usr/share/mbrola || fatal "Root configs setup"
+cp /linux-autoinstall/rice/MBROLA/us* /usr/share/mbrola || fatal "Root configs setup"
 
 }
 
 user_configs() {
 log "Setting up user configs"
 #add xinitrc
-cp system/bash/xinitrc /home/"$username"/.xinitrc &&
-cp system/bash/bashrc /home/"$username"/.bashrc || fatal "User configs setup"
+cp /linux-autoinstall/system/bash/xinitrc /home/"$username"/.xinitrc &&
+cp /linux-autoinstall/system/bash/bashrc /home/"$username"/.bashrc || fatal "User configs setup"
 
-cp scripts/bin/* /home/"$username"/.local/bin/ &&
-cp scripts/share/* /home/"$username"/.local/share/ || fatal "User configs .local"
+cp /linux-autoinstall/scripts/bin/* /home/"$username"/.local/bin/ &&
+cp /linux-autoinstall/scripts/share/* /home/"$username"/.local/share/ || fatal "User configs .local"
 }
 
 suckless() {
@@ -204,9 +201,8 @@ log "Setting up suckless"
 mkdir $HOME/git &&
 cd $HOME/git &&
 git clone https://github.com/inceye/suckless-build.git &&
-cd suckless-build &&
+cd $HOME/git/suckless-build &&
 ./deploy || fatal "Suckless"
-cd /linux-autoinstall/
 git config --global alias.ls "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset%n' --all --find-copies -M --stat"
 }
 
@@ -217,13 +213,15 @@ do
 
 	case $input in
 	    [yY][eE][sS]|[yY])
+			log "Setting up bluetooth and pulseaudio"
 			cp /etc/pulse/system.pa /etc/pulse/system.pa.bac &&
-			cp system/wireless/pulseaudio-bluetooth-mod.pa /etc/pulse/system.pa &&
-			cp system/wireless/main.conf /etc/bluetooth/main.conf
+			cp /linux-autoinstall/system/wireless/pulseaudio-bluetooth-mod.pa /etc/pulse/system.pa &&
+			cp /linux-autoinstall/system/wireless/main.conf /etc/bluetooth/main.conf || fatal "Bluetooth and pulseaudio"
 			;;
 	    [nN][oO]|[nN])
+			log "Not setting up bluetooth and pulseaudio"
 			break
-	       		;;
+	    ;;
 	    *)
 		echo "Invalid input..."
 		;;
@@ -233,52 +231,65 @@ done
 
 systemd_setup() {
 log "Setting up systemd"
-cp system/services/* /etc/systemd/system/ &&
+cp /linux-autoinstall/system/services/* /etc/systemd/system/ &&
 systemctl enable lock@"$username" &&
 systemctl enable dhcpcd &&
 systemctl enable bluetooth &&
 systemctl enable ufw &&
 systemctl enable cups &&
-
-cp system/systemd/* /etc/systemd/ || fatal "Systemd"
+cp /linux-autoinstall/system/systemd/* /etc/systemd/ || fatal "Systemd"
 }
 
 swap_setup() {
 log "Setting up swap"
-read -r -p "Enter the desired swap size in megabytes (e.g. 4096 will create a 4GiB swap) !!! choose swap bigger than your RAM, so that hibernation does not fail !!!:" swapsize &&
-
-dd if=/dev/zero of=/swapfile bs=1M count=$swapsize status=progress &&
-chmod 600 /swapfile &&
-mkswap /swapfile &&
-swapon /swapfile || fatal "Swap"
+while true
+do
+	read -r -p "Do you want to setup swap? [Y/n] " input
+	case $input in
+	    [yY][eE][sS]|[yY])
+			log "Setting up swap"
+			read -r -p "Enter the desired swap size in megabytes (e.g. 4096 will create a 4GiB swap) !!! choose swap bigger than your RAM, so that hibernation does not fail !!!:" swapsize &&
+			dd if=/dev/zero of=/swapfile bs=1M count=$swapsize status=progress &&
+			chmod 600 /swapfile &&
+			mkswap /swapfile &&
+			swapon /swapfile || fatal "Swap"
+			grubfile="grub.resume"
+			;;
+	    [nN][oO]|[nN])
+			echo "Swap will not be set up!"
+			grubfile="grub"
+			break
+	    ;;
+	    *)
+		echo "Invalid input..."
+		;;
+	esac
+done
 }
 
 kernel_config() {
-
 log "Setting up GRUB"
 grub-install --target=i386-pc $disk0 &&
 cryptuuid=$(blkid | grep "$(echo $disk0)3" | awk '{print $2}' | sed 's/"//g') &&
-sed -s "s/CRYPTDEV/$cryptuuid/" system/kernel/grub.resume > tmpgrub &&
+dgrub=$(sed -s "s/CRYPTDEV/$cryptuuid/" /linux-autoinstall/system/kernel/"$grubfile") &&
 
 # is combined with usb keyfile logic
-sed -s "s/KEYFILE/$keyfilegrub/" tmpgrub > tmpgrub1 &&
-grub-mkconfig -o /boot/grub/grub.cfg &&
+dgrub="${dgrub//KEYFILE/$keyfilegrub}" &&
 
 rootuuid=$(blkid | grep cryptroot | awk '{print $2}' | sed 's/"//g') &&
-sed -s "s/ROOTDEV/$rootuuid/" tmpgrub1 > tmpgrub &&
-rm tmpgrub1 &&
-
+dgrub="${dgrub//ROOTDEV/$rootuuid}" &&
 
 offset=$(sudo filefrag -v /swapfile |  awk '/( )0:( )/{print $4}' | sed 's/\.//g') &&
-sed -s "s/OFFSET/$offset/" tmpgrub > /etc/default/grub &&
-rm tmpgrub || fatal "GRUB!!!!!!!!!!"
+dgrub="${dgrub//OFFSET/$offset}" &&
+echo $dgrub > /etc/default/grub &&
+grub-mkconfig -o /boot/grub/grub.cfg || fatal "GRUB!!!!!!!!!!"
 
 log "Setting up mkinitcpio"
-cp system/kernel/mkinitcpio.conf /etc/mkinitcpio.conf &&
+cp /linux-autoinstall/system/kernel/mkinitcpio.conf /etc/mkinitcpio.conf &&
 mkinitcpio -p linux || fatal "Mkinitcpio!!!!!!"
 
 log "Setting up fstab"
-cp system/kernel/fstab /etc/fstab &&
+cp /linux-autoinstall/system/kernel/fstab /etc/fstab &&
 
 echo "$rootuuid	/	ext4	rw,relatime	0 1" >> /etc/fstab &&
 bootuuid=$(blkid | grep "$(echo $disk0)2" | awk '{print $2}' | sed 's/"//g') &&
@@ -288,7 +299,7 @@ echo "$homeuuid	/home	ext4	rw,relatime	0 2" >> /etc/fstab &&
 echo "/swapfile	none	swap	defaults	0 0" >> /etc/fstab || fatal "FSTAB!!!!!!!!!!!!!!!!!"
 
 log "Setting up crypttab"
-cp system/kernel/crypttab /etc/crypttab &&
+cp /linux-autoinstall/system/kernel/crypttab /etc/crypttab &&
 
 crypttabuuid=$(blkid | grep "$(echo $disk0)4" | awk '{print $2}' | sed 's/"//g') &&
 echo "crypthome	$crypttabuuid	/$(echo $keypref)keyfile_home" >> /etc/crypttab || fatal "Crypttab!!!!!"
@@ -318,8 +329,6 @@ done
 
 stage2_install() {
 log "Installing stage2"
-
-cd /linux-autoinstall || fatal "Cant cd into linux-autoinstall"
 
 get_vars
 
@@ -353,7 +362,7 @@ swap_setup
 
 kernel_setup
 
-chown -R $username:$username /home/$username || fatal "Chown"
+chown -R "$username":"$username" /home/"$username" || fatal "Chown"
 export -f suckless &&
 su "$username" -c -P "bash -c suckless" || fatal "User setup with suckless function"
 

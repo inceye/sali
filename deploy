@@ -139,7 +139,7 @@ pacstrap /mnt base linux linux-firmware linux-hardened || fatal "Packstrapping."
 chrooting() {
 log "Chrooting"
 cp -R ../linux-autoinstall /mnt/ &&
-cp "$homekfile" /mnt/ || fatal "Copy arch-conf and home key."
+cp "$homekfile" /mnt/ || fatal "Copy linux-autoinstall and home key."
 arch-chroot /mnt /linux-autoinstall/deploy-internal $disk0 $keyfilegrub $keypref || fatal "Arch-chroot."
 }
 
