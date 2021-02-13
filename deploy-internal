@@ -107,28 +107,32 @@ cargo install starship --root / || fatal "Starship"
 
 #pacaur install
 log "Installing some aut packages"
-mkdir /linux-autoinstall/tmp &&
-chown "$username":"$username" /linux-autoinstall/tmp
-cd /linux-autoinstall/tmp &&
+mkdir -p /linux-autoinstall/tmp || log "Directory tmp exists"
+chown "$username":"$username" /linux-autoinstall/tmp &&
+cd /linux-autoinstall/tmp || fatal "Set up tmp dir"
 su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key CFDF148828C642A7" || fatal "GPG key for libxft-bgra"
+cd /
 
 #libxft-bgra
 log "Install libxft-bgra"
 su "$username" -c "git clone https://aur.archlinux.org/libxft-bgra.git" &&
 cd /linux-autoinstall/tmp/libxft-bgra &&
 su "$username" -c -P "makepkg -si" || fatal "Libxft-bgra"
+cd /
 
 #auracle-git
 log "Installing auracle-git"
 su "$username" -c "git clone https://aur.archlinux.org/auracle-git.git" &&
 cd /linux-autoinstall/tmp/auracle-git &&
 su "$username" -c -P "makepkg -si" || fatal "Auracle-git"
+cd /
 
 #pacaur
 log "Installing pacaur"
 su "$username" -c "git clone https://aur.archlinux.org/pacaur.git" &&
 cd /linux-autoinstall/tmp/pacaur &&
 su "$username" -c -P "makepkg -si" || fatal "Pacaur"
+cd /
 }
 
 selinux_install() {
@@ -181,7 +185,7 @@ cp /linux-autoinstall/system/xorg/* /etc/X11/xorg.conf.d/ &&
 
 #add MBROLA
 cp /linux-autoinstall/rice/MBROLA/Bin/mbrola /usr/bin/mbrola &&
-mkdir /usr/share/mbrola/ &&
+mkdir -p /usr/share/mbrola/ || log "Dir mbrola exists"
 cp /linux-autoinstall/rice/MBROLA/us* /usr/share/mbrola || fatal "Root configs setup"
 
 }
@@ -189,6 +193,8 @@ cp /linux-autoinstall/rice/MBROLA/us* /usr/share/mbrola || fatal "Root configs s
 user_configs() {
 log "Setting up user configs"
 #add xinitrc
+mkdir -p /home/"$username"/.local/bin || log "Dir .local/bin exists"
+mkdir -p /home/"$udername"/.local/share || log "Dir .local/share exists"
 cp /linux-autoinstall/system/bash/xinitrc /home/"$username"/.xinitrc &&
 cp /linux-autoinstall/system/bash/bashrc /home/"$username"/.bashrc || fatal "User configs setup"
 
