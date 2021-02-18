@@ -21,358 +21,357 @@ fatal() {
 }
 
 initial() {
-log "Prerequisite install"
-pacman -S vim sudo || fatal "Pacman"
+	log "Prerequisite install"
+	pacman -S vim sudo || fatal "Pacman"
 }
 
 locale() {
-log "Setting up locale"
-vim /etc/locale.gen &&
-locale-gen || fatal "Locale"
+	log "Setting up locale"
+	vim /etc/locale.gen &&
+	locale-gen || fatal "Locale"
 }
 
 set_user() {
-log "Setting up user"
-read -r -p "Enter your username:" username &&
+	log "Setting up user"
+	read -r -p "Enter your username:" username &&
 
-#for slock to work add nobody:nogroup
-groupadd nogroup;
-( sudo useradd nobody -G nogroup || sudo usermod nobody -G nogroup ) &&
+	#for slock to work add nobody:nogroup
+	groupadd nogroup;
+	( sudo useradd nobody -G nogroup || sudo usermod nobody -G nogroup ) &&
 
 
-useradd --create-home --groups "wheel" --user-group "$username" &&
+	useradd --create-home --groups "wheel" --user-group "$username" &&
 
-log "Setting up the user password" || fatal "Setting up users and groups"
+	log "Setting up the user password" || fatal "Setting up users and groups"
 
-while true
-do
-	passwd "$username" &&
-	break
-	log "Try again"
-done
+	while true
+	do
+		passwd "$username" &&
+		break
+		log "Try again"
+	done
 
 }
 
 pacman_setup() {
-log "Setting up pacman"
-cp /linux-autoinstall/system/pacman/pacman.conf /etc/ &&
-pacman -Sy || fatal "Pacman"
+	log "Setting up pacman"
+	cp /linux-autoinstall/system/pacman/pacman.conf /etc/ &&
+	pacman -Sy || fatal "Pacman"
 }
 
 pacman_install() {
-log "Installing all needed packages from pacman"
-pacman -S grub reflector autoconf-archive \
-	texlive-most texlive-bin texlive-langcyrillic libreoffice \
-	noto-fonts-emoji ttf-droid ttf-dejavu gsfonts fontconfig \
-	neovim ranger nnn zathura zathura-pdf-mupdf sxiv \
-	jdk8-openjdk jre8-openjdk jre8-openjdk-headless \
-	base-devel git rust python2 python3 shellcheck \
-	time bc ufw binwalk traceroute bash-completion \
-	dialog wpa_supplicant dhcpcd bind-tools wget \
-	libnotify espeak-ng dunst speech-dispatcher \
-	xorg xorg-xinit libxrender xautolock xclip \
-	libinput xf86-video-intel mesa cups hplip \
-	diffutils webkit2gtk xorg-xprop gcr \
-	picom xcompmgr feh xorg-setxkbmap \
-	pulseaudio pulseaudio-bluetooth \
-	zip unzip squashfs-tools gdisk \
-	lm_sensors htop iotop powertop \
-	pamixer pavucontrol alsa-utils \
-	scrot screenkey imagemagick \
-	openssh sshfs rsync openvpn \
-	bluez bluez-utils blueman \
-	firejail stress cpupower \
-	mpv mpc mpd youtube-dl \
-	system-config-printer \
-	lynx elinks firefox \
-	pass pass-otp zbar \
-	mumble toxic || fatal "Packman"
+	log "Installing all needed packages from pacman"
+	pacman -S grub reflector autoconf-archive \
+		texlive-most texlive-bin texlive-langcyrillic libreoffice \
+		noto-fonts-emoji ttf-droid ttf-dejavu gsfonts fontconfig \
+		neovim ranger nnn zathura zathura-pdf-mupdf sxiv \
+		jdk8-openjdk jre8-openjdk jre8-openjdk-headless \
+		base-devel git rust python2 python3 shellcheck \
+		time bc ufw binwalk traceroute bash-completion \
+		dialog wpa_supplicant dhcpcd bind-tools wget \
+		libnotify espeak-ng dunst speech-dispatcher \
+		xorg xorg-xinit libxrender xautolock xclip \
+		libinput xf86-video-intel mesa cups hplip \
+		diffutils webkit2gtk xorg-xprop gcr \
+		picom xcompmgr feh xorg-setxkbmap \
+		pulseaudio pulseaudio-bluetooth \
+		zip unzip squashfs-tools gdisk \
+		lm_sensors htop iotop powertop \
+		pamixer pavucontrol alsa-utils \
+		scrot screenkey imagemagick \
+		openssh sshfs rsync openvpn \
+		bluez bluez-utils blueman \
+		firejail stress cpupower \
+		mpv mpc mpd youtube-dl \
+		system-config-printer \
+		lynx elinks firefox \
+		pass pass-otp zbar \
+		mumble toxic || fatal "Packman"
 }
 
 sudo_setup() {
-log "Setting up sudo"
-chmod +w /etc/sudoers &&
-echo "%wheel ALL=(ALL) NOPASSWD: ALL #" >> /etc/sudoers &&
-echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/hibernate, /usr/bin/reboot, /usr/bin/shutdown*" >> /etc/sudoers &&
-echo "Defaults editor=/bin/nvim" >> /etc/sudoers &&
-echo "Defaults insults" >> /etc/sudoers || fatal "Sudo"
-mkdir /etc/sudoers.d || log "/etc/sudoers.d exists"
-cp /linux-autoinstall/system/sudo/privacy /etc/sudoers.d/ &&
-echo "Defaults lecture=always" > /etc/sudoers.d/privacy || fatal "Sudo"
+	log "Setting up sudo"
+	chmod +w /etc/sudoers &&
+	echo "%wheel ALL=(ALL) NOPASSWD: ALL #" >> /etc/sudoers &&
+	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/hibernate, /usr/bin/reboot, /usr/bin/shutdown*" >> /etc/sudoers &&
+	echo "Defaults editor=/bin/nvim" >> /etc/sudoers &&
+	echo "Defaults insults" >> /etc/sudoers || fatal "Sudo"
+	mkdir /etc/sudoers.d || log "/etc/sudoers.d exists"
+	cp /linux-autoinstall/system/sudo/privacy /etc/sudoers.d/ &&
+	echo "Defaults lecture=always" > /etc/sudoers.d/privacy || fatal "Sudo"
 }
 
 install_additional() {
-log "Installing starship"
-cargo install starship --root / || fatal "Starship"
+	log "Installing starship"
+	cargo install starship --root / || fatal "Starship"
 
-#pacaur install
-log "Installing some aut packages"
-mkdir -p /linux-autoinstall/tmp || log "Directory tmp exists"
-chown "$username":"$username" /linux-autoinstall/tmp &&
-cd /linux-autoinstall/tmp || fatal "Set up tmp dir"
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key CFDF148828C642A7" || fatal "GPG key for libxft-bgra"
-cd /
+	#pacaur install
+	log "Installing some aut packages"
+	mkdir -p /linux-autoinstall/tmp || log "Directory tmp exists"
+	chown "$username":"$username" /linux-autoinstall/tmp &&
+	cd /linux-autoinstall/tmp || fatal "Set up tmp dir"
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key CFDF148828C642A7" || fatal "GPG key for libxft-bgra"
 
-#libxft-bgra
-log "Install libxft-bgra"
-su "$username" -c "git clone https://aur.archlinux.org/libxft-bgra.git" &&
-cd /linux-autoinstall/tmp/libxft-bgra &&
-su "$username" -c -P "makepkg -si" || fatal "Libxft-bgra"
-cd /
+	#libxft-bgra
+	log "Install libxft-bgra"
+	su "$username" -c "git clone https://aur.archlinux.org/libxft-bgra.git" &&
+	cd /linux-autoinstall/tmp/libxft-bgra &&
+	su "$username" -c -P "makepkg -si" || fatal "Libxft-bgra"
+	cd ../
 
-#auracle-git
-log "Installing auracle-git"
-su "$username" -c "git clone https://aur.archlinux.org/auracle-git.git" &&
-cd /linux-autoinstall/tmp/auracle-git &&
-su "$username" -c -P "makepkg -si" || fatal "Auracle-git"
-cd /
+	#auracle-git
+	log "Installing auracle-git"
+	su "$username" -c "git clone https://aur.archlinux.org/auracle-git.git" &&
+	cd /linux-autoinstall/tmp/auracle-git &&
+	su "$username" -c -P "makepkg -si" || fatal "Auracle-git"
+	cd ../
 
-#pacaur
-log "Installing pacaur"
-su "$username" -c "git clone https://aur.archlinux.org/pacaur.git" &&
-cd /linux-autoinstall/tmp/pacaur &&
-su "$username" -c -P "makepkg -si" || fatal "Pacaur"
-cd /
+	#pacaur
+	log "Installing pacaur"
+	su "$username" -c "git clone https://aur.archlinux.org/pacaur.git" &&
+	cd /linux-autoinstall/tmp/pacaur &&
+	su "$username" -c -P "makepkg -si" || fatal "Pacaur"
+	cd /
+
+	rm -Rf linux-autoinstall/tmp
 }
 
 selinux_install() {
-#selinux installation
-log "Installing selinux and hardening the system"
-log "This might take some time...."
-su "$username" -c -P "pacaur -S libsepol libselinux checkpolicy libsemanage mcstrans semodule-utils restorecond" &&
-su "$username" -c -P "pacaur -S secilc setools selinux-python" &&
-su "$username" -c -P "pacaur -S policycoreutils" &&
-su "$username" -c -P "pacaur -S pam-selinux pambase-selinux" &&
-## add gpg key
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key A8041FA839E16E36" && # pam-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key DF6FD971306037D9" && # coreutils-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key 46502EF796917195" && # findutils-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key 80A77F6095CDE47E" && # iproute2-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key 873DB37572A37B36" && # logrotate-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key D3E5F56B6D920D30" && # openssh-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key E9FEEA06A85E3F9D" && # shadow-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key A9F4C021CEA470FB" && # sudo-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key C54CA336CFEB557E" && # systemd-stable
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key E4B71D5EEC39C284" && # util-linux-selinux
-su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key E05AE1478F814C4F" && # dbus-selinux
-su "$username" -c -P "pacaur -S pam-selinux" &&
-## recompile core packages with selinux
-su "$username" -c -P "pacaur -S coreutils-selinux findutils-selinux iproute2-selinux logrotate-selinux openssh-selinux psmisc-selinux shadow-selinux cronie-selinux" &&
-su "$username" -c -P "pacaur -S sudo-selinux" || fatal "Selinux"
+	#selinux installation
+	log "Installing selinux and hardening the system"
+	log "This might take some time...."
+	su "$username" -c -P "pacaur -S libsepol libselinux checkpolicy libsemanage mcstrans semodule-utils restorecond" &&
+	su "$username" -c -P "pacaur -S secilc setools selinux-python" &&
+	su "$username" -c -P "pacaur -S policycoreutils" &&
+	su "$username" -c -P "pacaur -S pam-selinux pambase-selinux" &&
+	## add gpg key
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key A8041FA839E16E36" && # pam-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key DF6FD971306037D9" && # coreutils-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key 46502EF796917195" && # findutils-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key 80A77F6095CDE47E" && # iproute2-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key 873DB37572A37B36" && # logrotate-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key D3E5F56B6D920D30" && # openssh-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key E9FEEA06A85E3F9D" && # shadow-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key A9F4C021CEA470FB" && # sudo-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key C54CA336CFEB557E" && # systemd-stable
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key E4B71D5EEC39C284" && # util-linux-selinux
+	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key E05AE1478F814C4F" && # dbus-selinux
+	su "$username" -c -P "pacaur -S pam-selinux" &&
+	## recompile core packages with selinux
+	su "$username" -c -P "pacaur -S coreutils-selinux findutils-selinux iproute2-selinux logrotate-selinux openssh-selinux psmisc-selinux shadow-selinux cronie-selinux" &&
+	su "$username" -c -P "pacaur -S sudo-selinux" || fatal "Selinux"
 
-# just in case wheel
-groupadd wheel
-usermod -aG wheel $username
+	# just in case wheel
+	groupadd wheel
+	usermod -aG wheel $username
 
-sudo_setup
+	sudo_setup
 
-su "$username" -c -P "pacaur -S util-linux-selinux" &&
-su "$username" -c -P "pacaur -S systemd-selinux" &&
-su "$username" -c -P "pacaur -S dbus-selinux" &&
-su "$username" -c -P "pacaur -S selinux-alpm-hook" &&
-su "$username" -c -P "pacaur -S selinux-refpolicy-arch" || fatal "Selinux"
+	su "$username" -c -P "pacaur -S util-linux-selinux" &&
+	su "$username" -c -P "pacaur -S systemd-selinux" &&
+	su "$username" -c -P "pacaur -S dbus-selinux" &&
+	su "$username" -c -P "pacaur -S selinux-alpm-hook" &&
+	su "$username" -c -P "pacaur -S selinux-refpolicy-arch" || fatal "Selinux"
 }
 
 dir_setup() {
-  (mkdir -p /home/"$username"/.config || log ".config exists")
-  mkdir -p /home/"$username"/Pictures/Screenshots || log "Screenshots exists"
-  cp /linux-autoinstall/rice/wallpaper.jpg /home/"$username"/ || fatal "Dir"
+	  (mkdir -p /home/"$username"/.config || log ".config exists")
+	  mkdir -p /home/"$username"/Pictures/Screenshots || log "Screenshots exists"
+	  cp /linux-autoinstall/rice/wallpaper.jpg /home/"$username"/ || fatal "Dir"
 }
 
 configs() {
-log "Setting up configs and dotfiles"
-cp /linux-autoinstall/system/xorg/* /etc/X11/xorg.conf.d/ &&
+	log "Setting up configs and dotfiles"
+	cp /linux-autoinstall/system/xorg/* /etc/X11/xorg.conf.d/ &&
 
-#add MBROLA
-cp /linux-autoinstall/rice/MBROLA/Bin/mbrola /usr/bin/mbrola &&
-mkdir -p /usr/share/mbrola/ || log "Dir mbrola exists"
-cp /linux-autoinstall/rice/MBROLA/us* /usr/share/mbrola || fatal "Root configs setup"
+	#add MBROLA
+	cp /linux-autoinstall/rice/MBROLA/Bin/mbrola /usr/bin/mbrola &&
+	mkdir -p /usr/share/mbrola/ || log "Dir mbrola exists"
+	cp /linux-autoinstall/rice/MBROLA/us* /usr/share/mbrola || fatal "Root configs setup"
 
 }
 
 user_configs() {
-log "Setting up user configs"
-#add xinitrc
-mkdir -p /home/"$username"/.local/bin || log "Dir .local/bin exists"
-mkdir -p /home/"$udername"/.local/share || log "Dir .local/share exists"
-cp /linux-autoinstall/system/bash/xinitrc /home/"$username"/.xinitrc &&
-cp /linux-autoinstall/system/bash/bashrc /home/"$username"/.bashrc || fatal "User configs setup"
+	log "Setting up user configs"
+	#add xinitrc
+	mkdir -p /home/"$username"/.local/bin || log "Dir .local/bin exists"
+	mkdir -p /home/"$udername"/.local/share || log "Dir .local/share exists"
+	cp /linux-autoinstall/system/bash/xinitrc /home/"$username"/.xinitrc &&
+	cp /linux-autoinstall/system/bash/bashrc /home/"$username"/.bashrc || fatal "User configs setup"
 
-cp /linux-autoinstall/scripts/bin/* /home/"$username"/.local/bin/ &&
-cp /linux-autoinstall/scripts/share/* /home/"$username"/.local/share/ || fatal "User configs .local"
+	cp /linux-autoinstall/scripts/bin/* /home/"$username"/.local/bin/ &&
+	cp /linux-autoinstall/scripts/share/* /home/"$username"/.local/share/ || fatal "User configs .local"
 }
 
 suckless() {
-log "Setting up suckless"
-mkdir $HOME/git &&
-cd $HOME/git &&
-git clone https://github.com/inceye/suckless-build.git &&
-cd $HOME/git/suckless-build &&
-./deploy || fatal "Suckless"
-git config --global alias.ls "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset%n' --all --find-copies -M --stat"
+	log "Setting up suckless"
+	mkdir $HOME/git &&
+	cd $HOME/git &&
+	git clone https://github.com/inceye/suckless-build.git &&
+	cd $HOME/git/suckless-build &&
+	./deploy || fatal "Suckless"
+	git config --global alias.ls "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset%n' --all --find-copies -M --stat"
 }
 
 pulseaudio_conf() {
-while true
-do
-	read -r -p "Do you have a bluetooth card? [Y/n] " input
+	while true
+	do
+		read -r -p "Do you have a bluetooth card? [Y/n] " input
 
-	case $input in
-	    [yY][eE][sS]|[yY])
-			log "Setting up bluetooth and pulseaudio"
-			cp /etc/pulse/system.pa /etc/pulse/system.pa.bac &&
-			cp /linux-autoinstall/system/wireless/pulseaudio-bluetooth-mod.pa /etc/pulse/system.pa &&
-			cp /linux-autoinstall/system/wireless/main.conf /etc/bluetooth/main.conf || fatal "Bluetooth and pulseaudio"
+		case $input in
+		    [yY][eE][sS]|[yY])
+				log "Setting up bluetooth and pulseaudio"
+				cp /etc/pulse/system.pa /etc/pulse/system.pa.bac &&
+				cp /linux-autoinstall/system/wireless/pulseaudio-bluetooth-mod.pa /etc/pulse/system.pa &&
+				cp /linux-autoinstall/system/wireless/main.conf /etc/bluetooth/main.conf || fatal "Bluetooth and pulseaudio"
+				;;
+		    [nN][oO]|[nN])
+				log "Not setting up bluetooth and pulseaudio"
+				break
+		    ;;
+		    *)
+			echo "Invalid input..."
 			;;
-	    [nN][oO]|[nN])
-			log "Not setting up bluetooth and pulseaudio"
-			break
-	    ;;
-	    *)
-		echo "Invalid input..."
-		;;
-	esac
-done
+		esac
+	done
 }
 
 systemd_setup() {
-log "Setting up systemd"
-cp /linux-autoinstall/system/services/* /etc/systemd/system/ &&
-systemctl enable lock@"$username" &&
-systemctl enable dhcpcd &&
-systemctl enable bluetooth &&
-systemctl enable ufw &&
-systemctl enable cups &&
-cp /linux-autoinstall/system/systemd/* /etc/systemd/ || fatal "Systemd"
+	log "Setting up systemd"
+	cp /linux-autoinstall/system/services/* /etc/systemd/system/ &&
+	systemctl enable lock@"$username" &&
+	systemctl enable dhcpcd &&
+	systemctl enable bluetooth &&
+	systemctl enable ufw &&
+	systemctl enable cups &&
+	cp /linux-autoinstall/system/systemd/* /etc/systemd/ || fatal "Systemd"
 }
 
 swap_setup() {
-log "Setting up swap"
-while true
-do
-	read -r -p "Do you want to setup swap? [Y/n] " input
-	case $input in
-	    [yY][eE][sS]|[yY])
-			log "Setting up swap"
-			read -r -p "Enter the desired swap size in megabytes (e.g. 4096 will create a 4GiB swap) !!! choose swap bigger than your RAM, so that hibernation does not fail !!!:" swapsize &&
-			dd if=/dev/zero of=/swapfile bs=1M count=$swapsize status=progress &&
-			chmod 600 /swapfile &&
-			mkswap /swapfile &&
-			swapon /swapfile || fatal "Swap"
-			grubfile="grub.resume"
+	log "Setting up swap"
+	while true
+	do
+		read -r -p "Do you want to setup swap? [Y/n] " input
+		case $input in
+		    [yY][eE][sS]|[yY])
+				log "Setting up swap"
+				read -r -p "Enter the desired swap size in megabytes (e.g. 4096 will create a 4GiB swap) !!! choose swap bigger than your RAM, so that hibernation does not fail !!!:" swapsize &&
+				dd if=/dev/zero of=/swapfile bs=1M count=$swapsize status=progress &&
+				chmod 600 /swapfile &&
+				mkswap /swapfile &&
+				swapon /swapfile || fatal "Swap"
+				grubfile="grub.resume"
+				;;
+		    [nN][oO]|[nN])
+				echo "Swap will not be set up!"
+				grubfile="grub"
+				break
+		    ;;
+		    *)
+			echo "Invalid input..."
 			;;
-	    [nN][oO]|[nN])
-			echo "Swap will not be set up!"
-			grubfile="grub"
-			break
-	    ;;
-	    *)
-		echo "Invalid input..."
-		;;
-	esac
-done
+		esac
+	done
 }
 
 kernel_config() {
-log "Setting up GRUB"
-grub-install --target=i386-pc $disk0 &&
-cryptuuid=$(blkid | grep "$(echo $disk0)3" | awk '{print $2}' | sed 's/"//g') &&
-dgrub=$(sed -s "s/CRYPTDEV/$cryptuuid/" /linux-autoinstall/system/kernel/"$grubfile") &&
+	log "Setting up GRUB"
+	grub-install --target=i386-pc $disk0 &&
+	cryptuuid=$(blkid | grep "$(echo $disk0)3" | awk '{print $2}' | sed 's/"//g') &&
+	dgrub=$(sed -s "s/CRYPTDEV/$cryptuuid/" /linux-autoinstall/system/kernel/"$grubfile") &&
 
-# is combined with usb keyfile logic
-dgrub="${dgrub//KEYFILE/$keyfilegrub}" &&
+	# is combined with usb keyfile logic
+	dgrub="${dgrub//KEYFILE/$keyfilegrub}" &&
 
-rootuuid=$(blkid | grep cryptroot | awk '{print $2}' | sed 's/"//g') &&
-dgrub="${dgrub//ROOTDEV/$rootuuid}" &&
+	rootuuid=$(blkid | grep cryptroot | awk '{print $2}' | sed 's/"//g') &&
+	dgrub="${dgrub//ROOTDEV/$rootuuid}" &&
 
-offset=$(sudo filefrag -v /swapfile |  awk '/( )0:( )/{print $4}' | sed 's/\.//g') &&
-dgrub="${dgrub//OFFSET/$offset}" &&
-echo $dgrub > /etc/default/grub &&
-grub-mkconfig -o /boot/grub/grub.cfg || fatal "GRUB!!!!!!!!!!"
+	offset=$(sudo filefrag -v /swapfile |  awk '/( )0:( )/{print $4}' | sed 's/\.//g') &&
+	dgrub="${dgrub//OFFSET/$offset}" &&
+	echo $dgrub > /etc/default/grub &&
+	grub-mkconfig -o /boot/grub/grub.cfg || fatal "GRUB!!!!!!!!!!"
 
-log "Setting up mkinitcpio"
-cp /linux-autoinstall/system/kernel/mkinitcpio.conf /etc/mkinitcpio.conf &&
-mkinitcpio -p linux || fatal "Mkinitcpio!!!!!!"
+	log "Setting up mkinitcpio"
+	cp /linux-autoinstall/system/kernel/mkinitcpio.conf /etc/mkinitcpio.conf &&
+	mkinitcpio -p linux || fatal "Mkinitcpio!!!!!!"
 
-log "Setting up fstab"
-cp /linux-autoinstall/system/kernel/fstab /etc/fstab &&
+	log "Setting up fstab"
+	cp /linux-autoinstall/system/kernel/fstab /etc/fstab &&
 
-echo "$rootuuid	/	ext4	rw,relatime	0 1" >> /etc/fstab &&
-bootuuid=$(blkid | grep "$(echo $disk0)2" | awk '{print $2}' | sed 's/"//g') &&
-echo "$bootuuid	/boot	ext4	rw,relatime	0 2" >> /etc/fstab &&
-homeuuid=$(blkid | grep crypthome | awk '{print $2}' | sed 's/"//g') &&
-echo "$homeuuid	/home	ext4	rw,relatime	0 2" >> /etc/fstab &&
-echo "/swapfile	none	swap	defaults	0 0" >> /etc/fstab || fatal "FSTAB!!!!!!!!!!!!!!!!!"
+	echo "$rootuuid	/	ext4	rw,relatime	0 1" >> /etc/fstab &&
+	bootuuid=$(blkid | grep "$(echo $disk0)2" | awk '{print $2}' | sed 's/"//g') &&
+	echo "$bootuuid	/boot	ext4	rw,relatime	0 2" >> /etc/fstab &&
+	homeuuid=$(blkid | grep crypthome | awk '{print $2}' | sed 's/"//g') &&
+	echo "$homeuuid	/home	ext4	rw,relatime	0 2" >> /etc/fstab &&
+	echo "/swapfile	none	swap	defaults	0 0" >> /etc/fstab || fatal "FSTAB!!!!!!!!!!!!!!!!!"
 
-log "Setting up crypttab"
-cp /linux-autoinstall/system/kernel/crypttab /etc/crypttab &&
+	log "Setting up crypttab"
+	cp /linux-autoinstall/system/kernel/crypttab /etc/crypttab &&
 
-crypttabuuid=$(blkid | grep "$(echo $disk0)4" | awk '{print $2}' | sed 's/"//g') &&
-echo "crypthome	$crypttabuuid	/$(echo $keypref)keyfile_home" >> /etc/crypttab || fatal "Crypttab!!!!!"
+	crypttabuuid=$(blkid | grep "$(echo $disk0)4" | awk '{print $2}' | sed 's/"//g') &&
+	echo "crypthome	$crypttabuuid	/$(echo $keypref)keyfile_home" >> /etc/crypttab || fatal "Crypttab!!!!!"
 }
 
 reboot_logic() {
-while true
-do
-	read -r -p "Do you want to reboot? [Y/n] " input
+	while true
+	do
+		read -r -p "Do you want to reboot? [Y/n] " input
 
-	case $input in
-	    [yY][eE][sS]|[yY])
-			echo "Yes"
-			sudo reboot
+		case $input in
+		    [yY][eE][sS]|[yY])
+				echo "Yes"
+				sudo reboot
+				;;
+		    [nN][oO]|[nN])
+				echo "No"
+				echo "The script is finished, don't forget to reboot."
+				break
+				;;
+		    *)
+			echo "Invalid input..."
 			;;
-	    [nN][oO]|[nN])
-			echo "No"
-			echo "The script is finished, don't forget to reboot."
-			break
-	       		;;
-	    *)
-		echo "Invalid input..."
-		;;
-	esac
-done
+		esac
+	done
 }
 
 stage2_install() {
-log "Installing stage2"
+	log "Installing stage2"
 
-get_vars
+	initial
 
-initial
+	locale
 
-locale
+	set_user
 
-set_user
+	pacman_setup
 
-pacman_setup
+	pacman_install
 
-pacman_install
+	sudo_setup
 
-sudo_setup
+	install_additional
 
-install_additional
+	# selinux_install
 
-# selinux_install
+	dir_setup
 
-dir_setup
+	configs
 
-configs
+	user_configs
 
-user_configs
+	pulseaudio_conf
 
-pulseaudio_conf
+	systemd_setup
 
-systemd_setup
+	swap_setup
 
-swap_setup
+	kernel_setup
 
-kernel_setup
+	chown -R "$username":"$username" /home/"$username" || fatal "Chown"
+	export -f suckless &&
+	su "$username" -c -P "bash -c suckless" || fatal "User setup with suckless function"
 
-chown -R "$username":"$username" /home/"$username" || fatal "Chown"
-export -f suckless &&
-su "$username" -c -P "bash -c suckless" || fatal "User setup with suckless function"
-
-reboot_logic
+	reboot_logic
 }
 
 stage2_install
