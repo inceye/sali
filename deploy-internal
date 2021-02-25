@@ -62,7 +62,7 @@ pacman_setup() {
 pacman_install() {
 	log "Installing all needed packages from pacman"
 	pacman -S grub reflector autoconf-archive \
-		texlive-most texlive-bin texlive-langcyrillic libreoffice \
+		texlive-most texlive-bin texlive-lang libreoffice \
 		noto-fonts-emoji ttf-droid ttf-dejavu gsfonts fontconfig \
 		neovim ranger nnn zathura zathura-pdf-mupdf sxiv \
 		jdk8-openjdk jre8-openjdk jre8-openjdk-headless \
