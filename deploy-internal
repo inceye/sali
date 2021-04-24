@@ -67,13 +67,14 @@ pacman_install() {
 		neovim ranger nnn zathura zathura-pdf-mupdf sxiv \
 		jdk8-openjdk jre8-openjdk jre8-openjdk-headless \
 		base-devel git rust python2 python3 shellcheck \
+        valgrind gdb \
 		time bc ufw binwalk traceroute bash-completion \
 		dialog wpa_supplicant dhcpcd bind-tools wget \
 		libnotify espeak-ng dunst speech-dispatcher \
 		xorg xorg-xinit libxrender xautolock xclip \
 		libinput xf86-video-intel mesa cups hplip \
 		diffutils webkit2gtk xorg-xprop gcr \
-		picom xcompmgr feh xorg-setxkbmap \
+		xcompmgr feh xorg-setxkbmap \
 		pulseaudio pulseaudio-bluetooth \
 		zip unzip squashfs-tools gdisk \
 		lm_sensors htop iotop powertop \
@@ -86,6 +87,7 @@ pacman_install() {
 		system-config-printer \
 		lynx elinks firefox \
 		pass pass-otp zbar \
+		crash \
 		mumble toxic || fatal "Packman"
 }
 
@@ -132,6 +134,8 @@ install_additional() {
 	cd /linux-autoinstall/tmp/pacaur &&
 	su "$username" -c -P "makepkg -si" || fatal "Pacaur"
 	cd /
+
+	su "$username" -c -P "pacaur -S picom-rounded-corners" &&
 
 	rm -Rf linux-autoinstall/tmp
 }
