@@ -1,8 +1,9 @@
 #!/bin/bash
 
-disk0=$1
-keyfilegrub=$2
-keypref=$3
+disk=$1
+disk0=$2
+keyfilegrub=$3
+keypref=$4
 
 # logging fn
 log() {
@@ -357,7 +358,7 @@ kernel_config() {
 		return
 
 	log "Setting up GRUB"
-	grub-install --target=i386-pc $disk0 &&
+	grub-install --target=i386-pc $disk &&
 	cryptuuid=$(blkid | grep "$(echo $disk0)3" | awk '{print $2}' | sed 's/"//g') &&
 	dgrub=$(sed -s "s/CRYPTDEV/$cryptuuid/" /linux-autoinstall/system/kernel/"$grubfile") &&
 
