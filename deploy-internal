@@ -21,19 +21,35 @@ fatal() {
 }
 
 initial() {
+	grep -q initial .progress &&
+		log "Skipping prerequisite install" &&
+		return
+
 	log "Prerequisite install"
 	pacman -S vim sudo || fatal "Pacman"
+
+	echo "initial" >> .progress
 }
 
 locale() {
+	grep -q locale .progress &&
+		log "Skipping locale setup" &&
+		return
+
 	log "Setting up locale"
 	vim /etc/locale.gen &&
 	locale-gen || fatal "Locale"
+	
+	echo "locale" >> .progress
 }
 
 set_user() {
 	log "Setting up user"
 	read -r -p "Enter your username:" username &&
+
+	grep -q set_user .progress &&
+		log "Skipping user setup" &&
+		return
 
 	#for slock to work add nobody:nogroup
 	groupadd nogroup;
@@ -51,15 +67,35 @@ set_user() {
 		log "Try again"
 	done
 
+	log "Setting up the root password" || fatal "Setting up users and groups"
+
+	while true
+	do
+		passwd &&
+		break
+		log "Try again"
+	done
+
+	echo "set_user" >> .progress
 }
 
 pacman_setup() {
+	grep -q pacman_setup .progress &&
+		log "Skipping pacman setup" &&
+		return
+
 	log "Setting up pacman"
 	cp /linux-autoinstall/system/pacman/pacman.conf /etc/ &&
 	pacman -Sy || fatal "Pacman"
+
+	echo "pacman_setup" >> .progress
 }
 
 pacman_install() {
+	grep -q pacman_install .progress &&
+		log "Skipping pacman installations" &&
+		return
+
 	log "Installing all needed packages from pacman"
 	pacman -S grub reflector autoconf-archive \
 		texlive-most texlive-bin texlive-lang libreoffice \
@@ -89,6 +125,8 @@ pacman_install() {
 		pass pass-otp zbar \
 		crash \
 		mumble toxic || fatal "Packman"
+	
+	echo "pacman_install" >> .progress
 }
 
 sudo_setup() {
@@ -104,40 +142,24 @@ sudo_setup() {
 }
 
 install_additional() {
+	grep -q install_additional .progress &&
+		log "Skipping additional installations" &&
+		return
+
 	log "Installing starship"
-	cargo install starship --root / || fatal "Starship"
+	cargo install starship --root / || fatal "Starship install"
+
+	log "Installing paru"
+	cargo install paru --root / || fatal "Paru install"
 
 	#pacaur install
-	log "Installing some aut packages"
-	mkdir -p /linux-autoinstall/tmp || log "Directory tmp exists"
-	chown "$username":"$username" /linux-autoinstall/tmp &&
-	cd /linux-autoinstall/tmp || fatal "Set up tmp dir"
-	su "$username" -c "gpg --keyserver pool.sks-keyservers.net --recv-key CFDF148828C642A7" || fatal "GPG key for libxft-bgra"
+	log "Installing some aur packages"
 
-	#libxft-bgra
-	log "Install libxft-bgra"
-	su "$username" -c "git clone https://aur.archlinux.org/libxft-bgra.git" &&
-	cd /linux-autoinstall/tmp/libxft-bgra &&
-	su "$username" -c -P "makepkg -si" || fatal "Libxft-bgra"
-	cd ../
-
-	#auracle-git
-	log "Installing auracle-git"
-	su "$username" -c "git clone https://aur.archlinux.org/auracle-git.git" &&
-	cd /linux-autoinstall/tmp/auracle-git &&
-	su "$username" -c -P "makepkg -si" || fatal "Auracle-git"
-	cd ../
-
-	#pacaur
-	log "Installing pacaur"
-	su "$username" -c "git clone https://aur.archlinux.org/pacaur.git" &&
-	cd /linux-autoinstall/tmp/pacaur &&
-	su "$username" -c -P "makepkg -si" || fatal "Pacaur"
-	cd /
-
-	su "$username" -c -P "pacaur -S picom-rounded-corners" &&
+	su "$username" -c -P "paru -S picom-rounded-corners libxft-bgra pacaur" &&
 
 	rm -Rf linux-autoinstall/tmp
+
+	echo "install_additional" >> .progress
 }
 
 selinux_install() {
@@ -179,45 +201,80 @@ selinux_install() {
 }
 
 dir_setup() {
-	  (mkdir -p /home/"$username"/.config || log ".config exists")
-	  mkdir -p /home/"$username"/Pictures/Screenshots || log "Screenshots exists"
-	  cp /linux-autoinstall/rice/wallpaper.jpg /home/"$username"/ || fatal "Dir"
+	grep -q dir_setup .progress &&
+		log "Skipping config dir setup" &&
+		return
+
+	(mkdir -p /home/"$username"/.config || log ".config exists")
+	mkdir -p /home/"$username"/Pictures/Screenshots || log "Screenshots exists"
+	
+	echo "dir_setup" >> .progress
 }
 
 configs() {
+	grep -q configs .progress &&
+		log "Skipping config setup" &&
+		return
+
 	log "Setting up configs and dotfiles"
 	cp /linux-autoinstall/system/xorg/* /etc/X11/xorg.conf.d/ &&
 
-	#add MBROLA
-	cp /linux-autoinstall/rice/MBROLA/Bin/mbrola /usr/bin/mbrola &&
-	mkdir -p /usr/share/mbrola/ || log "Dir mbrola exists"
-	cp /linux-autoinstall/rice/MBROLA/us* /usr/share/mbrola || fatal "Root configs setup"
-
+	echo "configs" >> .progress
 }
 
 user_configs() {
-	log "Setting up user configs"
-	#add xinitrc
-	mkdir -p /home/"$username"/.local/bin || log "Dir .local/bin exists"
-	mkdir -p /home/"$udername"/.local/share || log "Dir .local/share exists"
-	cp /linux-autoinstall/system/bash/xinitrc /home/"$username"/.xinitrc &&
-	cp /linux-autoinstall/system/bash/bashrc /home/"$username"/.bashrc || fatal "User configs setup"
+	grep -q user_configs .progress &&
+		log "Skipping user config setup" &&
+		return
 
-	cp /linux-autoinstall/scripts/bin/* /home/"$username"/.local/bin/ &&
-	cp /linux-autoinstall/scripts/share/* /home/"$username"/.local/share/ || fatal "User configs .local"
+	log "Setting up user configs"
+	#sali_userspace_build
+
+	echo "user_configs" >> .progress
 }
 
 suckless() {
+	[ -d "$HOME/git" ] || mkdir $HOME/git || 
+		fatal "Git directory setup"
+	cd $HOME/git ||
+		fatal "Git directory setup"
+
+	grep -q suckless .progress &&
+		log "Skipping suckless tools setup" &&
+		return
+
 	log "Setting up suckless"
-	mkdir $HOME/git &&
-	cd $HOME/git &&
-	git clone https://github.com/inceye/suckless-build.git &&
-	cd $HOME/git/suckless-build &&
-	./deploy || fatal "Suckless"
+	git clone https://github.com/inceye/sali-suckless-build.git &&
+	cd $HOME/git/sali-suckless-build &&
+	./deploy || fatal "Suckless setup"
 	git config --global alias.ls "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset%n' --all --find-copies -M --stat"
+
+	echo "suckless" >> .progress
+}
+
+nvim_conf() {
+	[ -d "$HOME/git" ] || mkdir $HOME/git || 
+		fatal "Git directory setup"
+	cd $HOME/git ||
+		fatal "Git directory setup"
+
+	grep -q nvim_conf .progress &&
+		log "Skipping suckless tools setup" &&
+		return
+	git clone https://github.com/inceye/sali-nvim-build.git &&
+	cd $HOME/git/sali-nvim-build &&
+	./deploy || fatal "Neovim setup"
+
+	log "Setting up nvim"
+
+	echo "nvim_conf" >> ../.progress
 }
 
 pulseaudio_conf() {
+	grep -q pulseaudio_conf .progress &&
+		log "Skipping pulseaudio setup" &&
+		return
+
 	while true
 	do
 		read -r -p "Do you have a bluetooth card? [Y/n] " input
@@ -228,6 +285,7 @@ pulseaudio_conf() {
 				cp /etc/pulse/system.pa /etc/pulse/system.pa.bac &&
 				cp /linux-autoinstall/system/wireless/pulseaudio-bluetooth-mod.pa /etc/pulse/system.pa &&
 				cp /linux-autoinstall/system/wireless/main.conf /etc/bluetooth/main.conf || fatal "Bluetooth and pulseaudio"
+				break
 				;;
 		    [nN][oO]|[nN])
 				log "Not setting up bluetooth and pulseaudio"
@@ -238,9 +296,15 @@ pulseaudio_conf() {
 			;;
 		esac
 	done
+
+	echo "pulseaudio_conf" >> .progress
 }
 
 systemd_setup() {
+	grep -q systemd_setup .progress &&
+		log "Skipping systemd setup" &&
+		return
+
 	log "Setting up systemd"
 	cp /linux-autoinstall/system/services/* /etc/systemd/system/ &&
 	systemctl enable lock@"$username" &&
@@ -249,9 +313,15 @@ systemd_setup() {
 	systemctl enable ufw &&
 	systemctl enable cups &&
 	cp /linux-autoinstall/system/systemd/* /etc/systemd/ || fatal "Systemd"
+
+	echo "systemd_setup" >> .progress
 }
 
 swap_setup() {
+	grep -q swap_setup .progress &&
+		log "Skipping swap setup" &&
+		return
+
 	log "Setting up swap"
 	while true
 	do
@@ -265,6 +335,7 @@ swap_setup() {
 				mkswap /swapfile &&
 				swapon /swapfile || fatal "Swap"
 				grubfile="grub.resume"
+				break
 				;;
 		    [nN][oO]|[nN])
 				echo "Swap will not be set up!"
@@ -276,9 +347,15 @@ swap_setup() {
 			;;
 		esac
 	done
+
+	echo "swap_setup" >> .progress
 }
 
 kernel_config() {
+	grep -q kernel_config .progress &&
+		log "Skipping kernel configuration" &&
+		return
+
 	log "Setting up GRUB"
 	grub-install --target=i386-pc $disk0 &&
 	cryptuuid=$(blkid | grep "$(echo $disk0)3" | awk '{print $2}' | sed 's/"//g') &&
@@ -292,12 +369,13 @@ kernel_config() {
 
 	offset=$(sudo filefrag -v /swapfile |  awk '/( )0:( )/{print $4}' | sed 's/\.//g') &&
 	dgrub="${dgrub//OFFSET/$offset}" &&
-	echo $dgrub > /etc/default/grub &&
+	echo "$dgrub" > /etc/default/grub &&
 	grub-mkconfig -o /boot/grub/grub.cfg || fatal "GRUB!!!!!!!!!!"
 
 	log "Setting up mkinitcpio"
 	cp /linux-autoinstall/system/kernel/mkinitcpio.conf /etc/mkinitcpio.conf &&
 	mkinitcpio -p linux || fatal "Mkinitcpio!!!!!!"
+	mkinitcpio -p linux-hardened || fatal "Mkinitcpio!!!!!!"
 
 	log "Setting up fstab"
 	cp /linux-autoinstall/system/kernel/fstab /etc/fstab &&
@@ -313,7 +391,9 @@ kernel_config() {
 	cp /linux-autoinstall/system/kernel/crypttab /etc/crypttab &&
 
 	crypttabuuid=$(blkid | grep "$(echo $disk0)4" | awk '{print $2}' | sed 's/"//g') &&
-	echo "crypthome	$crypttabuuid	/$(echo $keypref)keyfile_home" >> /etc/crypttab || fatal "Crypttab!!!!!"
+	echo "crypthome	$crypttabuuid	/$(echo $keypref)_keyfile_home" >> /etc/crypttab || fatal "Crypttab!!!!!"
+
+	echo "kernel_config" >> .progress
 }
 
 reboot_logic() {
@@ -369,11 +449,15 @@ stage2_install() {
 
 	swap_setup
 
-	kernel_setup
+	kernel_config
 
 	chown -R "$username":"$username" /home/"$username" || fatal "Chown"
+
 	export -f suckless &&
 	su "$username" -c -P "bash -c suckless" || fatal "User setup with suckless function"
+
+	export -f nvim_conf &&
+	su "$username" -c -P "bash -c nvim_conf" || fatal "User setup with nvim_conf function"
 
 	reboot_logic
 }
