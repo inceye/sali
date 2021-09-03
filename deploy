@@ -317,7 +317,8 @@ get_disk() {
 	if [[ $disk0 == *"/dev/sd"* ]]; then
 		log "Got a /dev/sd* disk!!!"
 		disk0="${disk}"
-	elif [[ $disk0 == *"/dev/nvme"* ]]; then
+	fi
+	if [[ $disk0 == *"/dev/nvme"* ]]; then
 		log "Got a /dev/nvme* disk!!!"
 		disk0="${disk}p"
 	else
