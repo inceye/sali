@@ -160,7 +160,7 @@ format_partitions() {
 	log "Formatting partitions"
 	mkfs.ext4 /dev/mapper/cryptroot &&
 	mkfs.ext4 /dev/mapper/crypthome &&
-	mkfs.ext4 $(echo "$disk0")2 || fatal "Formatting partitions."
+	mkfs.vfat $(echo "$disk0")2 || fatal "Formatting partitions."
 
 	echo "format_partitions" >> .progress
 }

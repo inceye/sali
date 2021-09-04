@@ -98,7 +98,7 @@ pacman_install() {
 		return
 
 	log "Installing all needed packages from pacman"
-	pacman -S grub efibootmgr reflector autoconf-archive \
+	pacman -S grub efibootmgr reflector autoconf-archive dosfstools\
 		texlive-most texlive-bin texlive-lang libreoffice \
 		noto-fonts-emoji ttf-droid ttf-dejavu gsfonts fontconfig \
 		neovim ranger nnn zathura zathura-pdf-mupdf sxiv \
@@ -404,7 +404,7 @@ kernel_config() {
 	
 	echo "$rootuuid	/	ext4	rw,relatime	0 1" >> /etc/fstab &&
 	bootuuid=$(blkid | grep "$(echo $disk0)2" | awk '{print $2}' | sed 's/"//g') &&
-	echo "$bootuuid	/boot	ext4	rw,relatime	0 2" >> /etc/fstab &&
+	echo "$bootuuid	/boot	vfat	rw,relatime	0 2" >> /etc/fstab &&
 	homeuuid=$(blkid | grep crypthome | awk '{print $2}' | sed 's/"//g') &&
 	echo "$homeuuid	/home	ext4	rw,relatime	0 2" >> /etc/fstab &&
 	echo "/swapfile	none	swap	defaults	0 0" >> /etc/fstab || fatal "FSTAB!!!!!!!!!!!!!!!!!"
