@@ -331,6 +331,28 @@ get_disk() {
 	echo "get_disk" >> .progress
 }
 
+reboot_logic() {
+	while true
+	do
+		read -r -p "Do you want to reboot? [Y/n] " input
+
+		case $input in
+		    [yY][eE][sS]|[yY])
+				echo "Yes"
+				sudo reboot
+				;;
+		    [nN][oO]|[nN])
+				echo "No"
+				echo "The script is finished, don't forget to reboot."
+				break
+				;;
+		    *)
+			echo "Invalid input..."
+			;;
+		esac
+	done
+}
+
 stage1_install() {
 
 	log "Starting stage1 install..."
@@ -366,6 +388,8 @@ stage1_install() {
 	pacstrapping
 
 	chrooting
+	
+	reboot_logic
 }
 
 stage1_install

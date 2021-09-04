@@ -98,7 +98,7 @@ pacman_install() {
 		return
 
 	log "Installing all needed packages from pacman"
-	pacman -S grub reflector autoconf-archive \
+	pacman -S grub efibootmgr reflector autoconf-archive \
 		texlive-most texlive-bin texlive-lang libreoffice \
 		noto-fonts-emoji ttf-droid ttf-dejavu gsfonts fontconfig \
 		neovim ranger nnn zathura zathura-pdf-mupdf sxiv \
@@ -357,67 +357,68 @@ kernel_config() {
 		log "Skipping kernel configuration" &&
 		return
 
-	log "Setting up GRUB"
-	grub-install --target=i386-pc $disk &&
+	
+	while true
+	do
+	
+	read -r -p "What bootloader do you want to install? ([B]ios/[U]efi)" bootsetup
+	case $bootsetup in
+		[gG]|[gG][rR][uU][bB])
+			log "Setting up BIOS"
+			grub-install --target=i386-pc $disk || fatal "Installing GRUB in legacy BIOS mode!"
+			break
+			;;
+		[uU]|[uU][eE][fF][iI])
+			log "Setting up UEFI"
+			grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB || fatal "Installing GRUB in UEFI mode!"
+			break
+			;;
+		*)
+			echo "Invalid input..."
+			;;
+	esac
+	done
+
+	log "Getting disk information"
 	cryptuuid=$(blkid | grep "$(echo $disk0)3" | awk '{print $2}' | sed 's/"//g') &&
+	rootuuid=$(blkid | grep cryptroot | awk '{print $2}' | sed 's/"//g') || fatal "Getting disk uuid data"
+
 	dgrub=$(sed -s "s/CRYPTDEV/$cryptuuid/" /linux-autoinstall/system/kernel/"$grubfile") &&
 
 	# is combined with usb keyfile logic
 	dgrub="${dgrub//KEYFILE/$keyfilegrub}" &&
 
-	rootuuid=$(blkid | grep cryptroot | awk '{print $2}' | sed 's/"//g') &&
 	dgrub="${dgrub//ROOTDEV/$rootuuid}" &&
 
 	offset=$(sudo filefrag -v /swapfile |  awk '/( )0:( )/{print $4}' | sed 's/\.//g') &&
 	dgrub="${dgrub//OFFSET/$offset}" &&
 	echo "$dgrub" > /etc/default/grub &&
-	grub-mkconfig -o /boot/grub/grub.cfg || fatal "GRUB!!!!!!!!!!"
+	grub-mkconfig -o /boot/grub/grub.cfg || fatal "GRUB config!!!!!!!!!!"
 
 	log "Setting up mkinitcpio"
 	cp /linux-autoinstall/system/kernel/mkinitcpio.conf /etc/mkinitcpio.conf &&
-	mkinitcpio -p linux || fatal "Mkinitcpio!!!!!!"
-	mkinitcpio -p linux-hardened || fatal "Mkinitcpio!!!!!!"
-
+	mkinitcpio -p linux || fatal "Mkinitcpio linux!!!!!!"
+	mkinitcpio -p linux-hardened || fatal "Mkinitcpio linux-hardened!!!!!!!!!!"
 	log "Setting up fstab"
 	cp /linux-autoinstall/system/kernel/fstab /etc/fstab &&
-
+	
 	echo "$rootuuid	/	ext4	rw,relatime	0 1" >> /etc/fstab &&
 	bootuuid=$(blkid | grep "$(echo $disk0)2" | awk '{print $2}' | sed 's/"//g') &&
 	echo "$bootuuid	/boot	ext4	rw,relatime	0 2" >> /etc/fstab &&
 	homeuuid=$(blkid | grep crypthome | awk '{print $2}' | sed 's/"//g') &&
 	echo "$homeuuid	/home	ext4	rw,relatime	0 2" >> /etc/fstab &&
 	echo "/swapfile	none	swap	defaults	0 0" >> /etc/fstab || fatal "FSTAB!!!!!!!!!!!!!!!!!"
-
+	
 	log "Setting up crypttab"
 	cp /linux-autoinstall/system/kernel/crypttab /etc/crypttab &&
-
+	
 	crypttabuuid=$(blkid | grep "$(echo $disk0)4" | awk '{print $2}' | sed 's/"//g') &&
 	echo "crypthome	$crypttabuuid	/$(echo $keypref)_keyfile_home" >> /etc/crypttab || fatal "Crypttab!!!!!"
 
 	echo "kernel_config" >> .progress
 }
 
-reboot_logic() {
-	while true
-	do
-		read -r -p "Do you want to reboot? [Y/n] " input
 
-		case $input in
-		    [yY][eE][sS]|[yY])
-				echo "Yes"
-				sudo reboot
-				;;
-		    [nN][oO]|[nN])
-				echo "No"
-				echo "The script is finished, don't forget to reboot."
-				break
-				;;
-		    *)
-			echo "Invalid input..."
-			;;
-		esac
-	done
-}
 
 stage2_install() {
 	log "Installing stage2"
@@ -460,7 +461,6 @@ stage2_install() {
 	export -f nvim_conf &&
 	su "$username" -c -P "bash -c nvim_conf" || fatal "User setup with nvim_conf function"
 
-	reboot_logic
 }
 
 stage2_install
