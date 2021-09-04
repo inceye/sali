@@ -106,7 +106,7 @@ pacman_install() {
 		base-devel git rust python2 python3 shellcheck \
         valgrind gdb \
 		time bc ufw binwalk traceroute bash-completion \
-		dialog wpa_supplicant dhcpcd bind-tools wget \
+		dialog wpa_supplicant dhcpcd bind-tools wget iw iwd \
 		libnotify espeak-ng dunst speech-dispatcher \
 		xorg xorg-xinit libxrender xautolock xclip \
 		libinput xf86-video-intel mesa cups hplip \
