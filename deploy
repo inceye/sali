@@ -186,7 +186,7 @@ pacstrapping() {
 	       return
 
 	log "Pacstrapping"
-	pacstrap /mnt base linux linux-firmware linux-hardened || fatal "Packstrapping."
+	pacstrap /mnt base linux linux-firmware linux-hardened linux-lts || fatal "Packstrapping."
 
 	echo "pacstrapping" >> .progress
 }
