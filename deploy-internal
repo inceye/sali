@@ -153,10 +153,32 @@ install_additional() {
 	log "Installing paru"
 	cargo install paru --root / || fatal "Paru install"
 
-	#pacaur install
-	log "Installing some aur packages"
+	#paru install
+	log "Installing some aur packages with paru"
 
-	su "$username" -c -P "paru -S picom-rounded-corners libxft-bgra pacaur" &&
+	su "$username" -c -P "paru -S picom-rounded-corners libxft-bgra"
+
+	# optional packages
+	while true
+	do
+		read -r -p "Do you want to install mutt-wizard-git? [Y/n] " input
+
+		case $input in
+		    [yY][eE][sS]|[yY])
+				log "Installing mutt-wizard-git"
+				su "$username" -c -P "paru -S mutt-wizard-git"
+				break
+				;;
+		    [nN][oO]|[nN])
+				log "Not installing mutt-wizard-git"
+				break
+		    ;;
+		    *)
+			echo "Invalid input..."
+			;;
+		esac
+	done
+
 
 	rm -Rf linux-autoinstall/tmp
 
