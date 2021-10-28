@@ -115,7 +115,7 @@ pacman_install() {
 		pulseaudio pulseaudio-bluetooth \
 		zip unzip squashfs-tools gdisk \
 		lm_sensors htop iotop powertop \
-		pamixer pavucontrol alsa-utils \
+		pamixer pavucontrol alsa-utils alsa-oss sof-firmware \
 		scrot screenkey imagemagick \
 		openssh sshfs rsync openvpn \
 		bluez bluez-utils blueman \
@@ -323,6 +323,34 @@ pulseaudio_conf() {
 	echo "pulseaudio_conf" >> .progress
 }
 
+alsa_kernel_modules() {
+	# Since udev>=171, the OSS emulation modules (snd_seq_oss, snd_pcm_oss, snd_mixer_oss) are not loaded by default
+	while true
+	do
+		read -r -p "Do you want to load OSS emulation modules? [Y/n] " input
+
+		case $input in
+		    [yY][eE][sS]|[yY])
+				log "Setting up OSS emulation modules"
+				modprobe snd_seq_oss &&
+				modprobe snd_pcm_oss &&
+				modprobe snd_mixer_oss || fatal "Installing OSS modules..."
+				break
+				;;
+		    [nN][oO]|[nN])
+				log "Not setting up OSS emulation modules"
+				break
+		    ;;
+		    *)
+			echo "Invalid input..."
+			;;
+		esac
+	done
+
+	log "Finished with alsa"
+
+}
+
 systemd_setup() {
 	grep -q systemd_setup .progress &&
 		log "Skipping systemd setup" &&
@@ -468,6 +496,8 @@ stage2_install() {
 	user_configs
 
 	pulseaudio_conf
+
+	alsa_kernel_modules
 
 	systemd_setup
 
