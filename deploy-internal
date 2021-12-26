@@ -331,10 +331,13 @@ alsa_kernel_modules() {
 
 		case $input in
 		    [yY][eE][sS]|[yY])
-				log "Setting up OSS emulation modules"
-				modprobe snd_seq_oss &&
-				modprobe snd_pcm_oss &&
-				modprobe snd_mixer_oss || fatal "Installing OSS modules..."
+				log "Option is not working yet"
+				log "You have to load them manually next boot time"
+				log "The commands are: modprobe snd_seq_oss snd_pcm_oss snd_mixer_oss"
+#				log "Setting up OSS emulation modules"
+#				modprobe snd_seq_oss &&
+#				modprobe snd_pcm_oss &&
+#				modprobe snd_mixer_oss || fatal "Installing OSS modules..."
 				break
 				;;
 		    [nN][oO]|[nN])
