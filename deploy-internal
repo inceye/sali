@@ -132,14 +132,15 @@ pacman_install() {
 
 sudo_setup() {
 	log "Setting up sudo"
-	chmod +w /etc/sudoers &&
+	chmod u+w /etc/sudoers &&
 	echo "%wheel ALL=(ALL) NOPASSWD: ALL #" >> /etc/sudoers &&
 	echo "%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/hibernate, /usr/bin/reboot, /usr/bin/shutdown*" >> /etc/sudoers &&
 	echo "Defaults editor=/bin/nvim" >> /etc/sudoers &&
 	echo "Defaults insults" >> /etc/sudoers || fatal "Sudo"
 	mkdir /etc/sudoers.d || log "/etc/sudoers.d exists"
 	cp /linux-autoinstall/system/sudo/privacy /etc/sudoers.d/ &&
-	echo "Defaults lecture=always" > /etc/sudoers.d/privacy || fatal "Sudo"
+	echo "Defaults lecture=always" > /etc/sudoers.d/privacy &&
+	chmod u-w /etc/sudoers || fatal "Sudo"
 }
 
 install_additional() {
